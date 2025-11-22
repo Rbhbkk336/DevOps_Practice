@@ -1,10 +1,12 @@
-name: CI - Symfony Docker Build
+name: CI Build
 
 on:
     push:
-        branches: ["main"]
+        branches:
+            - main
     pull_request:
-        branches: ["main"]
+        branches:
+            - main
 
 jobs:
     build:
@@ -14,16 +16,37 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v4
 
-            - name: Install PHP 8.3
+            - name: "Telegram notification: Build started"
+              uses: appleboy/telegram-action@v0.1.0
+              with:
+                  to: ${{ secrets.TELEGRAM_CHAT_ID }}
+                  token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+                  message: "🚀 Сборка CI для ветки ${{ github.ref_name }} началась"
+
+            - name: Set up PHP
               uses: shivammathur/setup-php@v2
               with:
                   php-version: '8.3'
+                  extensions: mbstring, intl, pdo, pdo_pgsql, zip, gd
 
             - name: Install Composer dependencies
-              run: composer install --no-interaction --no-progress
+              run: composer install --no-interaction --optimize-autoloader
 
             - name: Build Docker image
               run: docker build -t symfony-app .
 
-            - name: Test container (php -v)
-              run: docker run --rm symfony-app php -v
+            - name: "Telegram notification: Build success"
+              if: success()
+              uses: appleboy/telegram-action@v0.1.0
+              with:
+                  to: ${{ secrets.TELEGRAM_CHAT_ID }}
+                  token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+                  message: "✅ CI сборка для ветки ${{ github.ref_name }} прошла успешно"
+
+            - name: "Telegram notification: Build failed"
+              if: failure()
+              uses: appleboy/telegram-action@v0.1.0
+              with:
+                  to: ${{ secrets.TELEGRAM_CHAT_ID }}
+                  token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+                  message: "❌ CI сборка для ветки ${{ github.ref_name }} завершилась с ошибкой"
