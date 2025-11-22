@@ -10,7 +10,9 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     tesseract-ocr \
     libtesseract-dev \
-    && docker-php-ext-install intl zip pdo pdo_pgsql gd
+    libpq-dev \
+    && docker-php-ext-install intl zip gd \
+    && docker-php-ext-install pdo pdo_pgsql
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
